@@ -156,6 +156,28 @@
 
   .stamp-card.collected .stamp-label { color: var(--accent); }
 
+  .stamp-grade {
+    display: none;
+    position: absolute;
+    bottom: 6px;
+    right: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(0,229,160,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,160,0.3);
+  }
+
+  .stamp-card.collected .stamp-grade { display: block; }
+
+  .stamp-grade.grade-S { background: rgba(255,215,0,0.15); color: #ffd700; border-color: rgba(255,215,0,0.3); }
+  .stamp-grade.grade-A { background: rgba(0,229,160,0.15); color: #00e5a0; border-color: rgba(0,229,160,0.3); }
+  .stamp-grade.grade-B { background: rgba(0,184,212,0.15); color: #00b8d4; border-color: rgba(0,184,212,0.3); }
+  .stamp-grade.grade-C { background: rgba(255,165,0,0.15); color: #ffa500; border-color: rgba(255,165,0,0.3); }
+
   .stamp-number {
     position: absolute;
     top: 6px;
@@ -464,13 +486,17 @@ function render() {
   document.getElementById("total-count").textContent = BOOTHS.length;
 
   grid.innerHTML = BOOTHS.map((booth, i) => {
-    const isCollected = !!data.collected[booth.id];
+    const stampData = data.collected[booth.id];
+    const isCollected = !!stampData;
+    const grade = stampData ? stampData.grade || '' : '';
+    const gradeClass = grade ? `grade-${grade}` : '';
     return `
       <div class="stamp-card ${isCollected ? 'collected' : ''}" data-id="${booth.id}">
         <span class="stamp-number">${String(i+1).padStart(2,'0')}</span>
         <span class="stamp-check"></span>
         <span class="stamp-icon">${booth.icon}</span>
         <span class="stamp-label">${booth.name}</span>
+        <span class="stamp-grade ${gradeClass}">${grade}</span>
       </div>
     `;
   }).join("");
@@ -485,7 +511,7 @@ function render() {
 }
 
 // ── 스탬프 수집 ──
-function collectStamp(boothId) {
+function collectStamp(boothId, extraData = {}) {
   const booth = BOOTHS.find(b => b.id === boothId);
   if (!booth) {
     showToast("❌ 유효하지 않은 QR 코드입니다");
@@ -500,7 +526,10 @@ function collectStamp(boothId) {
 
   data.collected[boothId] = {
     timestamp: new Date().toISOString(),
-    name: booth.name
+    name: booth.name,
+    score: extraData.score || null,
+    grade: extraData.grade || null,
+    playTime: extraData.playTime || null,
   };
   saveData(data);
 
@@ -553,11 +582,17 @@ function closeScanner() {
 function onScanSuccess(decodedText) {
   // QR 데이터 파싱
   let boothId = null;
+  let extraData = {};
 
   try {
-    // JSON 형태: {"boothId":"BOOTH-01"}
+    // JSON 형태: {"boothId":"BOOTH-01","score":85,"grade":"A"}
     const parsed = JSON.parse(decodedText);
     boothId = parsed.boothId || parsed.booth_id || parsed.id;
+    extraData = {
+      score: parsed.score || null,
+      grade: parsed.grade || null,
+      playTime: parsed.playTime || null,
+    };
   } catch(e) {
     // 텍스트 형태: "BOOTH-01"
     if (decodedText.startsWith("BOOTH-")) {
@@ -568,7 +603,7 @@ function onScanSuccess(decodedText) {
   if (boothId) {
     // 진동 피드백
     if (navigator.vibrate) navigator.vibrate(100);
-    collectStamp(boothId);
+    collectStamp(boothId, extraData);
     closeScanner();
   } else {
     showToast("❌ 유효하지 않은 QR 코드입니다");

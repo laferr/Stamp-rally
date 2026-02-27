@@ -104,24 +104,29 @@
 //  index.html의 BOOTHS와 동일하게 맞춰주세요
 // ═══════════════════════════════════════════
 const BOOTHS = [
-  { id: "BOOTH-01", name: "수소란 무엇인가", icon: "💧" },
-  { id: "BOOTH-02", name: "수소 생산 과정",  icon: "⚙️" },
-  { id: "BOOTH-03", name: "수소 연료전지",   icon: "🔋" },
-  { id: "BOOTH-04", name: "수소 자동차",     icon: "🚗" },
-  { id: "BOOTH-05", name: "그린 수소",       icon: "🌱" },
-  { id: "BOOTH-06", name: "수소 안전 체험",  icon: "🛡️" },
+  { id: "BOOTH-01", name: "수소란 무엇인가", icon: "💧", score: 92,  grade: "S", playTime: 85  },
+  { id: "BOOTH-02", name: "수소 생산 과정",  icon: "⚙️", score: 78,  grade: "B", playTime: 120 },
+  { id: "BOOTH-03", name: "수소 연료전지",   icon: "🔋", score: 85,  grade: "A", playTime: 95  },
+  { id: "BOOTH-04", name: "수소 자동차",     icon: "🚗", score: 65,  grade: "C", playTime: 150 },
+  { id: "BOOTH-05", name: "그린 수소",       icon: "🌱", score: 90,  grade: "S", playTime: 110 },
+  { id: "BOOTH-06", name: "수소 안전 체험",  icon: "🛡️", score: 82,  grade: "A", playTime: 70  },
 ];
 
 const grid = document.getElementById("qr-grid");
 
 BOOTHS.forEach(booth => {
-  const qrData = JSON.stringify({ boothId: booth.id });
+  const qrData = JSON.stringify({ 
+    boothId: booth.id, 
+    score: booth.score, 
+    grade: booth.grade, 
+    playTime: booth.playTime 
+  });
 
   const card = document.createElement("div");
   card.className = "qr-card";
   card.innerHTML = `
     <h3>${booth.icon} ${booth.name}</h3>
-    <div class="booth-id">${booth.id}</div>
+    <div class="booth-id">${booth.id} · Score: ${booth.score} · Grade: ${booth.grade}</div>
     <div class="qr-container" id="qr-${booth.id}"></div>
     <div class="qr-data">QR 데이터: ${qrData}</div>
   `;
