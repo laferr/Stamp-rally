@@ -3,26 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>전시 스탬프 랠리</title>
+<title>H₂ 체험 스탬프 랠리</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0a0a0a">
+<meta name="theme-color" content="#060b18">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;600;800&family=Space+Mono:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;600;800&family=Orbitron:wght@500;700;900&family=Space+Mono:wght@400;700&display=swap');
 
   :root {
-    --bg: #0a0a0a;
-    --surface: #141414;
-    --surface2: #1e1e1e;
-    --border: #2a2a2a;
-    --text: #f0f0f0;
-    --text-dim: #888;
-    --accent: #00e5a0;
-    --accent-glow: rgba(0, 229, 160, 0.3);
-    --stamp-empty: #1a1a1a;
-    --stamp-collected: #00e5a0;
+    --bg: #060b18;
+    --surface: #0c1324;
+    --surface2: #111a30;
+    --border: #1a2744;
+    --border-glow: #1e3a5f;
+    --text: #e8edf5;
+    --text-dim: #5a6d8a;
+    --cyan: #00d4ff;
+    --cyan-glow: rgba(0,212,255,0.25);
+    --green: #00e5a0;
+    --green-glow: rgba(0,229,160,0.25);
+    --gold: #ffd700;
+    --gold-glow: rgba(255,215,0,0.25);
+    --orange: #ff8c00;
+    --blue: #4a7dff;
     --danger: #ff4757;
   }
 
@@ -36,401 +41,242 @@
     overflow-x: hidden;
   }
 
-  /* ── Header ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .screen { display: none; position: relative; z-index: 1; }
+  .screen.active { display: block; }
+
+  /* ══ NAME SCREEN ══ */
+  .name-screen {
+    min-height: 100dvh;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 24px; text-align: center;
+  }
+  .name-screen.active { display: flex; }
+
+  .name-logo { font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 4px; color: var(--cyan); margin-bottom: 8px; }
+  .name-title { font-size: 26px; font-weight: 800; margin-bottom: 8px; background: linear-gradient(135deg, var(--cyan), var(--green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .name-subtitle { font-size: 13px; color: var(--text-dim); margin-bottom: 40px; line-height: 1.6; }
+
+  .name-input-wrap { width: 100%; max-width: 320px; margin-bottom: 20px; }
+  .name-input {
+    width: 100%; padding: 16px 20px; background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 12px; color: var(--text); font-family: 'Noto Sans KR', sans-serif;
+    font-size: 16px; outline: none; text-align: center; transition: border-color 0.3s;
+  }
+  .name-input:focus { border-color: var(--cyan); box-shadow: 0 0 20px var(--cyan-glow); }
+  .name-input::placeholder { color: var(--text-dim); }
+
+  .name-submit {
+    width: 100%; max-width: 320px; padding: 16px;
+    background: linear-gradient(135deg, var(--cyan), #0099cc);
+    color: var(--bg); border: none; border-radius: 12px;
+    font-family: 'Noto Sans KR', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer;
+  }
+  .name-submit:active { transform: scale(0.97); }
+
+  /* ══ STAMP SCREEN ══ */
   .header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(10,10,10,0.85);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(6,11,24,0.88); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border); padding: 16px 20px;
+    display: flex; justify-content: space-between; align-items: center;
   }
+  .header-title { font-family: 'Orbitron', sans-serif; font-size: 12px; letter-spacing: 3px; color: var(--cyan); }
+  .header-progress { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--text-dim); }
+  .header-progress span { color: var(--cyan); font-weight: 700; }
 
-  .header-title {
-    font-family: 'Space Mono', monospace;
-    font-size: 14px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--accent);
-  }
+  .container { max-width: 480px; margin: 0 auto; padding: 20px; }
 
-  .header-progress {
-    font-family: 'Space Mono', monospace;
-    font-size: 13px;
-    color: var(--text-dim);
-  }
+  .exhibition-info { text-align: center; padding: 28px 0 20px; }
+  .exhibition-info h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; background: linear-gradient(135deg, var(--cyan), var(--green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .user-greeting { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+  .user-greeting strong { color: var(--cyan); font-weight: 600; }
 
-  .header-progress span { color: var(--accent); font-weight: 700; }
-
-  /* ── Main Container ── */
-  .container {
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-
-  /* ── Exhibition Info ── */
-  .exhibition-info {
-    text-align: center;
-    padding: 32px 0 24px;
-  }
-
-  .exhibition-info h1 {
-    font-size: 24px;
-    font-weight: 800;
-    margin-bottom: 8px;
-    background: linear-gradient(135deg, var(--accent), #00b8d4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .exhibition-info p {
-    font-size: 13px;
-    color: var(--text-dim);
-    line-height: 1.6;
-  }
-
-  /* ── Stamp Grid ── */
-  .stamp-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin: 20px 0;
-  }
-
+  .stamp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
   .stamp-card {
-    aspect-ratio: 1;
-    background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    overflow: hidden;
+    aspect-ratio: 1; background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 14px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 6px; padding: 12px 8px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); position: relative; overflow: hidden;
   }
+  .stamp-card.collected { border-color: var(--cyan); background: linear-gradient(145deg, rgba(0,212,255,0.06), rgba(0,229,160,0.04)); box-shadow: 0 0 16px var(--cyan-glow); }
+  .stamp-card.collected .stamp-icon { transform: scale(1); opacity: 1; }
+  .stamp-card.just-collected { animation: stampPop 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes stampPop { 0% { transform: scale(0.8); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-  .stamp-card.collected {
-    border-color: var(--accent);
-    background: linear-gradient(145deg, rgba(0,229,160,0.08), rgba(0,184,212,0.05));
-    box-shadow: 0 0 20px var(--accent-glow);
-  }
+  .stamp-icon { font-size: 30px; transform: scale(0.6); opacity: 0.15; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+  .stamp-label { font-size: 10px; font-weight: 600; color: var(--text-dim); text-align: center; line-height: 1.3; }
+  .stamp-card.collected .stamp-label { color: var(--cyan); }
 
-  .stamp-card.collected .stamp-icon {
-    transform: scale(1);
-    opacity: 1;
-  }
-
-  .stamp-card.just-collected {
-    animation: stampPop 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes stampPop {
-    0% { transform: scale(0.8); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-  }
-
-  .stamp-icon {
-    font-size: 32px;
-    transform: scale(0.6);
-    opacity: 0.2;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .stamp-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-dim);
-    text-align: center;
-    line-height: 1.3;
-  }
-
-  .stamp-card.collected .stamp-label { color: var(--accent); }
-
-  .stamp-grade {
-    display: none;
-    position: absolute;
-    bottom: 6px;
-    right: 8px;
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 6px;
-    background: rgba(0,229,160,0.15);
-    color: var(--accent);
-    border: 1px solid rgba(0,229,160,0.3);
-  }
-
-  .stamp-card.collected .stamp-grade { display: block; }
-
-  .stamp-grade.grade-S { background: rgba(255,215,0,0.15); color: #ffd700; border-color: rgba(255,215,0,0.3); }
-  .stamp-grade.grade-A { background: rgba(0,229,160,0.15); color: #00e5a0; border-color: rgba(0,229,160,0.3); }
-  .stamp-grade.grade-B { background: rgba(0,184,212,0.15); color: #00b8d4; border-color: rgba(0,184,212,0.3); }
-  .stamp-grade.grade-C { background: rgba(255,165,0,0.15); color: #ffa500; border-color: rgba(255,165,0,0.3); }
-
-  .stamp-number {
-    position: absolute;
-    top: 6px;
-    left: 8px;
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    color: var(--text-dim);
-    opacity: 0.4;
-  }
-
-  .stamp-check {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s;
-  }
-
-  .stamp-card.collected .stamp-check {
-    background: var(--accent);
-    border-color: var(--accent);
-  }
-
-  .stamp-check::after {
-    content: '✓';
-    font-size: 10px;
-    color: var(--bg);
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
+  .stamp-number { position: absolute; top: 5px; left: 7px; font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-dim); opacity: 0.3; }
+  .stamp-check { position: absolute; top: 5px; right: 7px; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+  .stamp-card.collected .stamp-check { background: var(--cyan); border-color: var(--cyan); }
+  .stamp-check::after { content: '✓'; font-size: 9px; color: var(--bg); opacity: 0; transition: opacity 0.3s; }
   .stamp-card.collected .stamp-check::after { opacity: 1; }
 
-  /* ── Scan Button ── */
+  .stamp-grade { display: none; position: absolute; bottom: 5px; right: 7px; font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 5px; }
+  .stamp-card.collected .stamp-grade { display: block; }
+  .stamp-grade.grade-S { background: rgba(255,215,0,0.15); color: var(--gold); }
+  .stamp-grade.grade-A { background: rgba(0,229,160,0.15); color: var(--green); }
+  .stamp-grade.grade-B { background: rgba(0,212,255,0.15); color: var(--cyan); }
+  .stamp-grade.grade-C { background: rgba(255,140,0,0.15); color: var(--orange); }
+
   .scan-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    padding: 16px;
-    margin: 24px 0;
-    background: var(--accent);
-    color: var(--bg);
-    border: none;
-    border-radius: 14px;
-    font-family: 'Noto Sans KR', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 4px 24px var(--accent-glow);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 16px; margin: 20px 0;
+    background: linear-gradient(135deg, var(--cyan), #0099cc);
+    color: var(--bg); border: none; border-radius: 14px;
+    font-family: 'Noto Sans KR', sans-serif; font-size: 16px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 24px var(--cyan-glow);
   }
-
   .scan-btn:active { transform: scale(0.97); }
-
   .scan-btn svg { width: 22px; height: 22px; }
 
-  /* ── Scanner Modal ── */
-  .scanner-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: rgba(0,0,0,0.95);
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  .report-btn {
+    display: none; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 14px; margin-bottom: 12px;
+    background: linear-gradient(135deg, var(--gold), #cc9900);
+    color: var(--bg); border: none; border-radius: 14px;
+    font-family: 'Noto Sans KR', sans-serif; font-size: 15px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 24px var(--gold-glow);
+    animation: pulse 2s ease-in-out infinite;
   }
+  .report-btn.show { display: flex; }
+  .report-btn:active { transform: scale(0.97); }
+  @keyframes pulse { 0%,100% { box-shadow: 0 4px 24px var(--gold-glow); } 50% { box-shadow: 0 4px 40px rgba(255,215,0,0.4); } }
 
+  /* Scanner */
+  .scanner-overlay { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; }
   .scanner-overlay.active { display: flex; }
-
-  .scanner-wrapper {
-    width: min(85vw, 360px);
-    position: relative;
-  }
-
-  .scanner-title {
-    text-align: center;
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 20px;
-    color: var(--text);
-  }
-
-  #qr-reader {
-    border-radius: 16px;
-    overflow: hidden;
-  }
-
+  .scanner-wrapper { width: min(85vw, 360px); }
+  .scanner-title { text-align: center; font-size: 15px; font-weight: 600; margin-bottom: 20px; color: var(--text); }
+  #qr-reader { border-radius: 16px; overflow: hidden; }
   #qr-reader video { border-radius: 16px; }
+  .scanner-close { margin-top: 24px; padding: 12px 32px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'Noto Sans KR', sans-serif; font-size: 14px; cursor: pointer; }
 
-  .scanner-close {
-    margin-top: 24px;
-    padding: 12px 32px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--text);
-    font-family: 'Noto Sans KR', sans-serif;
-    font-size: 14px;
-    cursor: pointer;
-  }
+  .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); padding: 14px 24px; background: var(--surface2); border: 1px solid var(--cyan); border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--cyan); opacity: 0; transition: all 0.3s cubic-bezier(0.16,1,0.3,1); z-index: 2000; pointer-events: none; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* ── Completion Banner ── */
-  .completion-banner {
-    display: none;
-    text-align: center;
-    padding: 32px 20px;
-    margin: 20px 0;
-    background: linear-gradient(145deg, rgba(0,229,160,0.12), rgba(0,184,212,0.08));
-    border: 2px solid var(--accent);
-    border-radius: 20px;
-    animation: bannerGlow 2s ease-in-out infinite alternate;
-  }
-
-  .completion-banner.show { display: block; }
-
-  @keyframes bannerGlow {
-    from { box-shadow: 0 0 20px var(--accent-glow); }
-    to { box-shadow: 0 0 40px var(--accent-glow); }
-  }
-
-  .completion-banner h2 {
-    font-size: 22px;
-    font-weight: 800;
-    margin-bottom: 8px;
-    color: var(--accent);
-  }
-
-  .completion-banner p {
-    font-size: 14px;
-    color: var(--text-dim);
-    line-height: 1.6;
-  }
-
-  .completion-emoji {
-    font-size: 48px;
-    margin-bottom: 12px;
-    animation: bounce 1s ease-in-out infinite;
-  }
-
-  @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-  }
-
-  /* ── Toast ── */
-  .toast {
-    position: fixed;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    padding: 14px 24px;
-    background: var(--surface2);
-    border: 1px solid var(--accent);
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--accent);
-    opacity: 0;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 2000;
-    pointer-events: none;
-    white-space: nowrap;
-  }
-
-  .toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-
-  /* ── Reset Button ── */
-  .reset-area {
-    text-align: center;
-    padding: 32px 0;
-    border-top: 1px solid var(--border);
-    margin-top: 20px;
-  }
-
-  .reset-btn {
-    padding: 8px 20px;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text-dim);
-    font-family: 'Noto Sans KR', sans-serif;
-    font-size: 12px;
-    cursor: pointer;
-  }
-
+  .reset-area { text-align: center; padding: 32px 0; border-top: 1px solid var(--border); margin-top: 16px; }
+  .reset-btn { padding: 8px 20px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); font-family: 'Noto Sans KR', sans-serif; font-size: 12px; cursor: pointer; }
   .reset-btn:active { border-color: var(--danger); color: var(--danger); }
+  .footer { text-align: center; padding: 12px; font-size: 10px; color: var(--text-dim); opacity: 0.3; }
 
-  /* ── Footer ── */
-  .footer {
-    text-align: center;
-    padding: 16px;
-    font-size: 11px;
-    color: var(--text-dim);
-    opacity: 0.4;
-  }
+  /* ══ REPORT SCREEN ══ */
+  .report-container { max-width: 480px; margin: 0 auto; padding: 0 16px 40px; }
+
+  .rpt-header { text-align: center; padding: 32px 20px 24px; border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
+  .rpt-header::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at center, rgba(0,212,255,0.06) 0%, transparent 60%); pointer-events: none; }
+  .rpt-header-tag { font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 4px; color: var(--cyan); margin-bottom: 6px; position: relative; }
+  .rpt-header h1 { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; letter-spacing: 2px; color: var(--text); margin-bottom: 4px; position: relative; }
+  .rpt-header h2 { font-size: 15px; font-weight: 600; color: var(--text-dim); position: relative; }
+
+  .rpt-section { margin-top: 24px; }
+  .rpt-section-title { font-size: 13px; font-weight: 700; color: var(--cyan); margin-bottom: 14px; padding-left: 2px; display: flex; align-items: center; gap: 6px; }
+  .rpt-section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, var(--border), transparent); }
+
+  .rpt-researcher { background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; padding: 20px; display: flex; gap: 16px; align-items: center; }
+  .rpt-avatar { width: 72px; height: 72px; border-radius: 12px; background: linear-gradient(135deg, var(--surface2), var(--border)); border: 1.5px solid var(--border-glow); display: flex; align-items: center; justify-content: center; font-size: 36px; flex-shrink: 0; }
+  .rpt-info { flex: 1; }
+  .rpt-info-row { display: flex; font-size: 12px; margin-bottom: 5px; line-height: 1.4; }
+  .rpt-info-label { color: var(--text-dim); min-width: 62px; flex-shrink: 0; }
+  .rpt-info-value { color: var(--text); font-weight: 600; }
+
+  .rpt-exp-list { display: flex; flex-direction: column; gap: 10px; }
+  .rpt-exp-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+  .rpt-exp-icon { font-size: 28px; flex-shrink: 0; width: 40px; text-align: center; }
+  .rpt-exp-body { flex: 1; min-width: 0; }
+  .rpt-exp-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .rpt-exp-score { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: var(--cyan); flex-shrink: 0; }
+  .rpt-exp-stars { font-size: 12px; letter-spacing: 2px; margin-bottom: 3px; color: var(--gold); }
+  .rpt-exp-comment { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+  .rpt-exp-meta { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim); opacity: 0.6; margin-top: 3px; }
+
+  .rpt-exp-grade { font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; flex-shrink: 0; }
+  .rpt-exp-grade.grade-S { background: rgba(255,215,0,0.15); color: var(--gold); }
+  .rpt-exp-grade.grade-A { background: rgba(0,229,160,0.15); color: var(--green); }
+  .rpt-exp-grade.grade-B { background: rgba(0,212,255,0.15); color: var(--cyan); }
+  .rpt-exp-grade.grade-C { background: rgba(255,140,0,0.15); color: var(--orange); }
+
+  .rpt-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 24px; }
+  .rpt-stat-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 10px; text-align: center; }
+  .rpt-stat-value { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 700; color: var(--cyan); margin-bottom: 4px; }
+  .rpt-stat-label { font-size: 10px; color: var(--text-dim); }
+
+  .rpt-overall { text-align: center; padding: 28px 20px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 18px; position: relative; overflow: hidden; }
+  .rpt-overall::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, var(--overall-glow, rgba(0,212,255,0.06)) 0%, transparent 70%); pointer-events: none; }
+  .rpt-overall-label { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; position: relative; }
+  .rpt-overall-icon { font-size: 40px; margin-bottom: 6px; position: relative; }
+  .rpt-overall-grade { font-family: 'Orbitron', sans-serif; font-size: 48px; font-weight: 900; position: relative; margin-bottom: 4px; text-shadow: 0 0 30px currentColor; }
+  .rpt-overall-title { font-size: 18px; font-weight: 800; position: relative; margin-bottom: 16px; }
+  .rpt-overall-comment { font-size: 13px; color: var(--text-dim); line-height: 1.8; position: relative; max-width: 300px; margin: 0 auto; }
+  .rpt-overall-comment strong { color: var(--text); }
+
+  .rpt-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 28px; }
+  .rpt-back-btn { width: 100%; padding: 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-family: 'Noto Sans KR', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; text-align: center; }
+
+  .rpt-footer { text-align: center; margin-top: 24px; padding: 16px; border-top: 1px solid var(--border); }
+  .rpt-footer-text { font-size: 11px; color: var(--text-dim); opacity: 0.4; line-height: 1.6; }
+
+  .rpt-fade-in { animation: fadeUp 0.5s ease-out both; }
+  .rpt-fade-in:nth-child(2) { animation-delay: 0.08s; }
+  .rpt-fade-in:nth-child(3) { animation-delay: 0.14s; }
+  .rpt-fade-in:nth-child(4) { animation-delay: 0.2s; }
+  .rpt-fade-in:nth-child(5) { animation-delay: 0.26s; }
+  .rpt-fade-in:nth-child(6) { animation-delay: 0.32s; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-  <div class="header-title">STAMP RALLY</div>
-  <div class="header-progress"><span id="collected-count">0</span> / <span id="total-count">0</span></div>
+<!-- NAME -->
+<div class="name-screen" id="screen-name">
+  <div class="name-logo">H₂ EXPERIENCE LAB</div>
+  <h1 class="name-title">수소놀이체험관</h1>
+  <p class="name-subtitle">체험을 시작하기 전에<br>연구원님의 이름을 알려주세요!</p>
+  <div class="name-input-wrap">
+    <input type="text" class="name-input" id="name-input" placeholder="이름을 입력하세요" maxlength="20" autocomplete="off">
+  </div>
+  <button class="name-submit" onclick="submitName()">🔬 체험 시작하기</button>
 </div>
 
-<!-- Main -->
-<div class="container">
-
-  <div class="exhibition-info">
-    <h1>수소 에너지 체험 전시</h1>
-    <p>각 체험 부스를 방문하고 QR 코드를 스캔하여<br>스탬프를 모아보세요!</p>
+<!-- STAMP -->
+<div class="screen" id="screen-stamp">
+  <div class="header">
+    <div class="header-title">STAMP RALLY</div>
+    <div class="header-progress"><span id="collected-count">0</span> / <span id="total-count">0</span></div>
   </div>
-
-  <!-- Stamp Grid -->
-  <div class="stamp-grid" id="stamp-grid"></div>
-
-  <!-- Scan Button -->
-  <button class="scan-btn" id="scan-btn" onclick="openScanner()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-      <path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/>
-      <rect x="7" y="7" width="10" height="10" rx="1"/>
-    </svg>
-    QR 스탬프 스캔
-  </button>
-
-  <!-- Completion Banner -->
-  <div class="completion-banner" id="completion-banner">
-    <div class="completion-emoji">🎉</div>
-    <h2>축하합니다!</h2>
-    <p>모든 스탬프를 수집했습니다.<br>안내 데스크에서 기념품을 수령하세요!</p>
+  <div class="container">
+    <div class="exhibition-info">
+      <h1>H₂ 수소 에너지 체험</h1>
+      <p class="user-greeting"><strong id="greeting-name"></strong> 연구원님, 각 체험 부스를 방문하고<br>QR 코드를 스캔하여 스탬프를 모아보세요!</p>
+    </div>
+    <div class="stamp-grid" id="stamp-grid"></div>
+    <button class="report-btn" id="report-btn" onclick="showReport()">📋 체험 리포트 확인하기</button>
+    <button class="scan-btn" onclick="openScanner()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+      QR 스탬프 스캔
+    </button>
+    <div class="reset-area"><button class="reset-btn" onclick="resetStamps()">스탬프 초기화</button></div>
+    <div class="footer">H₂ Experience Lab · Stamp Rally</div>
   </div>
-
-  <!-- Reset -->
-  <div class="reset-area">
-    <button class="reset-btn" onclick="resetStamps()">스탬프 초기화</button>
-  </div>
-
-  <div class="footer">Powered by Stamp Rally PWA</div>
 </div>
 
-<!-- Scanner Modal -->
+<!-- REPORT -->
+<div class="screen" id="screen-report">
+  <div class="report-container" id="report-content"></div>
+</div>
+
+<!-- SCANNER -->
 <div class="scanner-overlay" id="scanner-overlay">
   <div class="scanner-wrapper">
     <div class="scanner-title">📷 QR 코드를 스캔하세요</div>
@@ -439,197 +285,194 @@
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════
-//  전시 부스 데이터 (여기만 수정하면 됩니다)
-// ═══════════════════════════════════════════
 const BOOTHS = [
-  { id: "BOOTH-01", name: "수소란 무엇인가", icon: "💧" },
-  { id: "BOOTH-02", name: "수소 생산 과정",  icon: "⚙️" },
-  { id: "BOOTH-03", name: "수소 연료전지",   icon: "🔋" },
-  { id: "BOOTH-04", name: "수소 자동차",     icon: "🚗" },
-  { id: "BOOTH-05", name: "그린 수소",       icon: "🌱" },
-  { id: "BOOTH-06", name: "수소 안전 체험",  icon: "🛡️" },
+  { id: "BOOTH-01", name: "수소메가스테이션 운영", icon: "💧" },
+  { id: "BOOTH-02", name: "수전해 효율 실험",     icon: "⚙️" },
+  { id: "BOOTH-03", name: "수소도시 체험",         icon: "🏙️" },
+  { id: "BOOTH-04", name: "수소 자동차 시승",      icon: "🚗" },
+  { id: "BOOTH-05", name: "그린수소 생산",         icon: "🌱" },
+  { id: "BOOTH-06", name: "수소 안전 체험",        icon: "🛡️" },
 ];
 
-// ═══════════════════════════════════════════
-//  QR 코드 형식 (각 부스에 부착할 QR 내용)
-//  예: {"boothId":"BOOTH-01"}
-// ═══════════════════════════════════════════
+const GRADE_CONFIG = {
+  S: { label: "S급 연구원", icon: "🏆", color: "var(--gold)", glow: "rgba(255,215,0,0.08)",
+    comment: n => `${n} 연구원님은 뛰어난 연구 능력으로\n수소 에너지의 미래를 밝히고 있습니다.\n앞으로도 깨끗한 에너지를 위해 함께 연구해 주세요!` },
+  A: { label: "A급 연구원", icon: "🥇", color: "var(--green)", glow: "rgba(0,229,160,0.08)",
+    comment: n => `${n} 연구원님은 훌륭한 이해력을 보여주셨습니다.\n수소 에너지 전문가로의 가능성이 보입니다!\n조금만 더 도전하면 S급도 문제없어요!` },
+  B: { label: "B급 연구원", icon: "🥈", color: "var(--cyan)", glow: "rgba(0,212,255,0.08)",
+    comment: n => `${n} 연구원님, 좋은 출발입니다!\n수소 에너지에 대한 관심이 느껴집니다.\n꾸준히 학습하면 더 높은 등급에 도전할 수 있어요!` },
+  C: { label: "C급 연구원", icon: "🥉", color: "var(--orange)", glow: "rgba(255,140,0,0.08)",
+    comment: n => `${n} 연구원님, 첫 발을 내디뎠습니다!\n수소 에너지의 세계는 무궁무진합니다.\n다음 방문에서 더 높은 등급에 도전해 보세요!` }
+};
+
+const BOOTH_COMMENTS = {
+  S: "완벽한 수행! 최고의 성과를 달성했습니다!",
+  A: "훌륭한 결과! 높은 이해도를 보여주었습니다.",
+  B: "좋은 성과! 조금만 더 노력하면 A등급!",
+  C: "도전 완료! 다음엔 더 높은 점수를!",
+};
 
 const STORAGE_KEY = "stamp_rally_data";
 let html5QrCode = null;
 
-// ── 데이터 관리 ──
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch(e) {}
-  return { collected: {} };
+function loadData() { try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch(e) {} return { userName: "", collected: {} }; }
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen, .name-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
 }
 
-function saveData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+function submitName() {
+  const n = document.getElementById('name-input').value.trim();
+  if (!n) { showToast("이름을 입력해주세요"); return; }
+  const d = loadData(); d.userName = n; saveData(d);
+  showScreen('screen-stamp'); render();
 }
 
-// ── UI 렌더링 ──
+function init() {
+  const d = loadData();
+  if (d.userName) { showScreen('screen-stamp'); render(); } else { showScreen('screen-name'); }
+}
+
 function render() {
   const data = loadData();
   const grid = document.getElementById("stamp-grid");
-  const collectedCount = Object.keys(data.collected).length;
-
-  document.getElementById("collected-count").textContent = collectedCount;
+  const cnt = Object.keys(data.collected).length;
+  document.getElementById("collected-count").textContent = cnt;
   document.getElementById("total-count").textContent = BOOTHS.length;
+  document.getElementById("greeting-name").textContent = data.userName;
 
-  grid.innerHTML = BOOTHS.map((booth, i) => {
-    const stampData = data.collected[booth.id];
-    const isCollected = !!stampData;
-    const grade = stampData ? stampData.grade || '' : '';
-    const gradeClass = grade ? `grade-${grade}` : '';
-    return `
-      <div class="stamp-card ${isCollected ? 'collected' : ''}" data-id="${booth.id}">
-        <span class="stamp-number">${String(i+1).padStart(2,'0')}</span>
-        <span class="stamp-check"></span>
-        <span class="stamp-icon">${booth.icon}</span>
-        <span class="stamp-label">${booth.name}</span>
-        <span class="stamp-grade ${gradeClass}">${grade}</span>
-      </div>
-    `;
+  grid.innerHTML = BOOTHS.map((b, i) => {
+    const sd = data.collected[b.id];
+    const g = sd ? sd.grade || '' : '';
+    return `<div class="stamp-card ${sd ? 'collected' : ''}" data-id="${b.id}">
+      <span class="stamp-number">${String(i+1).padStart(2,'0')}</span><span class="stamp-check"></span>
+      <span class="stamp-icon">${b.icon}</span><span class="stamp-label">${b.name}</span>
+      <span class="stamp-grade ${g?'grade-'+g:''}">${g}</span>
+    </div>`;
   }).join("");
 
-  // 완료 체크
-  const banner = document.getElementById("completion-banner");
-  if (collectedCount >= BOOTHS.length) {
-    banner.classList.add("show");
-  } else {
-    banner.classList.remove("show");
-  }
+  document.getElementById("report-btn").classList.toggle("show", cnt >= BOOTHS.length);
 }
 
-// ── 스탬프 수집 ──
-function collectStamp(boothId, extraData = {}) {
-  const booth = BOOTHS.find(b => b.id === boothId);
-  if (!booth) {
-    showToast("❌ 유효하지 않은 QR 코드입니다");
-    return false;
-  }
-
-  const data = loadData();
-  if (data.collected[boothId]) {
-    showToast(`✅ "${booth.name}" 이미 수집 완료!`);
-    return false;
-  }
-
-  data.collected[boothId] = {
-    timestamp: new Date().toISOString(),
-    name: booth.name,
-    score: extraData.score || null,
-    grade: extraData.grade || null,
-    playTime: extraData.playTime || null,
-  };
-  saveData(data);
-
-  render();
-
-  // 팝 애니메이션
-  setTimeout(() => {
-    const card = document.querySelector(`.stamp-card[data-id="${boothId}"]`);
-    if (card) card.classList.add("just-collected");
-  }, 50);
-
-  const total = BOOTHS.length;
-  const count = Object.keys(data.collected).length;
-  if (count >= total) {
-    showToast("🎉 모든 스탬프 수집 완료!");
-  } else {
-    showToast(`✨ "${booth.name}" 스탬프 획득! (${count}/${total})`);
-  }
-  return true;
+function collectStamp(boothId, extra = {}) {
+  const b = BOOTHS.find(x => x.id === boothId);
+  if (!b) { showToast("❌ 유효하지 않은 QR 코드입니다"); return; }
+  const d = loadData();
+  if (d.collected[boothId]) { showToast(`✅ "${b.name}" 이미 수집 완료!`); return; }
+  d.collected[boothId] = { timestamp: new Date().toISOString(), name: b.name, score: extra.score||null, grade: extra.grade||null, playTime: extra.playTime||null };
+  saveData(d); render();
+  setTimeout(() => { const c = document.querySelector(`.stamp-card[data-id="${boothId}"]`); if(c) c.classList.add("just-collected"); }, 50);
+  const cnt = Object.keys(d.collected).length;
+  showToast(cnt >= BOOTHS.length ? "🎉 모든 스탬프 수집 완료!" : `✨ "${b.name}" 스탬프 획득! (${cnt}/${BOOTHS.length})`);
 }
 
-// ── QR 스캐너 ──
 function openScanner() {
-  const overlay = document.getElementById("scanner-overlay");
-  overlay.classList.add("active");
-
+  document.getElementById("scanner-overlay").classList.add("active");
   html5QrCode = new Html5Qrcode("qr-reader");
-  html5QrCode.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: { width: 250, height: 250 } },
-    onScanSuccess,
-    () => {}
-  ).catch(err => {
-    showToast("❌ 카메라 접근 실패");
-    closeScanner();
-  });
+  html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, () => {}).catch(() => { showToast("❌ 카메라 접근 실패"); closeScanner(); });
 }
-
 function closeScanner() {
-  const overlay = document.getElementById("scanner-overlay");
-  overlay.classList.remove("active");
-
-  if (html5QrCode) {
-    html5QrCode.stop().catch(() => {});
-    html5QrCode.clear();
-    html5QrCode = null;
-  }
+  document.getElementById("scanner-overlay").classList.remove("active");
+  if (html5QrCode) { html5QrCode.stop().catch(()=>{}); html5QrCode.clear(); html5QrCode = null; }
+}
+function onScanSuccess(txt) {
+  let id = null, ex = {};
+  try { const p = JSON.parse(txt); id = p.boothId||p.booth_id||p.id; ex = { score:p.score||null, grade:p.grade||null, playTime:p.playTime||null }; } catch(e) { if(txt.startsWith("BOOTH-")) id = txt.trim(); }
+  if (id) { if(navigator.vibrate) navigator.vibrate(100); collectStamp(id, ex); closeScanner(); } else { showToast("❌ 유효하지 않은 QR 코드입니다"); }
 }
 
-function onScanSuccess(decodedText) {
-  // QR 데이터 파싱
-  let boothId = null;
-  let extraData = {};
+// ── REPORT ──
+function showReport() {
+  const data = loadData();
+  const col = data.collected, name = data.userName;
+  const scores = BOOTHS.map(b => col[b.id]?.score || 0);
+  const avg = Math.round(scores.reduce((a,b)=>a+b,0) / scores.length);
+  const totalTime = BOOTHS.reduce((s,b) => s + (col[b.id]?.playTime||0), 0);
+  const best = BOOTHS.reduce((best,b) => (col[b.id]?.score||0) > (col[best.id]?.score||0) ? b : best, BOOTHS[0]);
+  const tg = avg >= 90 ? 'S' : avg >= 80 ? 'A' : avg >= 70 ? 'B' : 'C';
+  const gc = GRADE_CONFIG[tg];
+  const now = new Date();
+  const ds = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
 
-  try {
-    // JSON 형태: {"boothId":"BOOTH-01","score":85,"grade":"A"}
-    const parsed = JSON.parse(decodedText);
-    boothId = parsed.boothId || parsed.booth_id || parsed.id;
-    extraData = {
-      score: parsed.score || null,
-      grade: parsed.grade || null,
-      playTime: parsed.playTime || null,
-    };
-  } catch(e) {
-    // 텍스트 형태: "BOOTH-01"
-    if (decodedText.startsWith("BOOTH-")) {
-      boothId = decodedText.trim();
-    }
-  }
+  const stars = s => s>=90?'★★★★★':s>=80?'★★★★☆':s>=70?'★★★☆☆':s>=60?'★★☆☆☆':'★☆☆☆☆';
+  const ftime = s => { if(!s) return '-'; const m=Math.floor(s/60),r=s%60; return m>0?`${m}분 ${r}초`:`${r}초`; };
 
-  if (boothId) {
-    // 진동 피드백
-    if (navigator.vibrate) navigator.vibrate(100);
-    collectStamp(boothId, extraData);
-    closeScanner();
-  } else {
-    showToast("❌ 유효하지 않은 QR 코드입니다");
-  }
+  document.getElementById('report-content').innerHTML = `
+    <div class="rpt-header rpt-fade-in">
+      <div class="rpt-header-tag">H₂ EXPERIENCE LAB</div>
+      <h1>EXPERIENCE REPORT</h1>
+      <h2>수소놀이체험관 체험 리포트</h2>
+    </div>
+    <div style="padding:0 4px">
+      <div class="rpt-section rpt-fade-in">
+        <div class="rpt-section-title">🧑‍🔬 연구원 정보</div>
+        <div class="rpt-researcher">
+          <div class="rpt-avatar">👤</div>
+          <div class="rpt-info">
+            <div class="rpt-info-row"><span class="rpt-info-label">이 름 :</span><span class="rpt-info-value">${name}</span></div>
+            <div class="rpt-info-row"><span class="rpt-info-label">직 업 :</span><span class="rpt-info-value">수소에너지 연구원</span></div>
+            <div class="rpt-info-row"><span class="rpt-info-label">발급일 :</span><span class="rpt-info-value">${ds}</span></div>
+            <div class="rpt-info-row"><span class="rpt-info-label">ID :</span><span class="rpt-info-value" style="font-family:'Space Mono',monospace;font-size:11px">H2-${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(Math.floor(Math.random()*9999)).padStart(4,'0')}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rpt-section rpt-fade-in">
+        <div class="rpt-section-title">📊 체험 기록</div>
+        <div class="rpt-exp-list">
+          ${BOOTHS.map(b => { const d=col[b.id]||{}, g=d.grade||'-', sc=d.score||0; return `
+            <div class="rpt-exp-card">
+              <div class="rpt-exp-icon">${b.icon}</div>
+              <div class="rpt-exp-body">
+                <div class="rpt-exp-name">${b.name}<span class="rpt-exp-score">${sc}점</span></div>
+                <div class="rpt-exp-stars">${stars(sc)}</div>
+                <div class="rpt-exp-comment">${BOOTH_COMMENTS[g]||''}</div>
+                <div class="rpt-exp-meta">⏱ ${ftime(d.playTime)}</div>
+              </div>
+              <span class="rpt-exp-grade grade-${g}">${g}</span>
+            </div>`; }).join("")}
+        </div>
+      </div>
+
+      <div class="rpt-section rpt-fade-in">
+        <div class="rpt-section-title">📈 체험 통계</div>
+        <div class="rpt-stats">
+          <div class="rpt-stat-card"><div class="rpt-stat-value">${avg}</div><div class="rpt-stat-label">평균 점수</div></div>
+          <div class="rpt-stat-card"><div class="rpt-stat-value" style="font-size:14px">${ftime(totalTime)}</div><div class="rpt-stat-label">총 소요시간</div></div>
+          <div class="rpt-stat-card"><div class="rpt-stat-value">${best.icon}</div><div class="rpt-stat-label">최고 성적 부스</div></div>
+        </div>
+      </div>
+
+      <div class="rpt-section rpt-fade-in">
+        <div class="rpt-section-title">🏅 종합 평가</div>
+        <div class="rpt-overall" style="--overall-glow:${gc.glow}">
+          <div class="rpt-overall-label">수소도시 공로 등급</div>
+          <div class="rpt-overall-icon">${gc.icon}</div>
+          <div class="rpt-overall-grade" style="color:${gc.color}">${tg}</div>
+          <div class="rpt-overall-title" style="color:${gc.color}">${gc.label}</div>
+          <div class="rpt-overall-comment">${gc.comment(name).replace(/\n/g,'<br>')}</div>
+        </div>
+      </div>
+
+      <div class="rpt-actions rpt-fade-in">
+        <button class="rpt-back-btn" onclick="backToStamp()">← 스탬프 화면으로 돌아가기</button>
+      </div>
+      <div class="rpt-footer"><div class="rpt-footer-text">수소놀이체험관 · H₂ Experience Playground<br>본 리포트는 체험 결과를 기반으로 자동 생성되었습니다.</div></div>
+    </div>`;
+  showScreen('screen-report'); window.scrollTo(0,0);
 }
 
-// ── 토스트 ──
-function showToast(msg) {
-  const toast = document.getElementById("toast");
-  toast.textContent = msg;
-  toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 2500);
-}
+function backToStamp() { showScreen('screen-stamp'); render(); }
+function showToast(m) { const t=document.getElementById("toast"); t.textContent=m; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2500); }
+function resetStamps() { if(confirm("모든 데이터를 초기화하시겠습니까?")) { localStorage.removeItem(STORAGE_KEY); showScreen('screen-name'); showToast("🔄 초기화되었습니다"); } }
 
-// ── 초기화 ──
-function resetStamps() {
-  if (confirm("모든 스탬프를 초기화하시겠습니까?")) {
-    localStorage.removeItem(STORAGE_KEY);
-    render();
-    showToast("🔄 스탬프가 초기화되었습니다");
-  }
-}
-
-// ── 초기 렌더링 ──
-render();
+document.getElementById('name-input').addEventListener('keydown', e => { if(e.key==='Enter') submitName(); });
+init();
 </script>
-
 </body>
 </html>
