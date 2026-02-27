@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>부스 QR 코드 생성기</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Space+Mono:wght@700&display=swap');
+  
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: #f5f5f5;
+    padding: 40px 20px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 32px;
+  }
+
+  .qr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+  }
+
+  .qr-card {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    break-inside: avoid;
+  }
+
+  .qr-card h3 {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  .qr-card .booth-id {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 20px;
+  }
+
+  .qr-card .qr-container {
+    display: inline-block;
+    padding: 16px;
+    background: white;
+    border-radius: 8px;
+  }
+
+  .qr-card .qr-data {
+    margin-top: 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #bbb;
+    word-break: break-all;
+  }
+
+  .print-btn {
+    display: block;
+    margin: 40px auto 0;
+    padding: 14px 40px;
+    background: #0a0a0a;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  @media print {
+    .print-btn { display: none; }
+    body { background: white; padding: 20px; }
+    .qr-card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>📎 부스 QR 코드 생성기</h1>
+<p class="subtitle">아래 QR 코드를 인쇄하여 각 부스에 부착하세요. 관람객이 스탬프 앱으로 스캔합니다.</p>
+
+<div class="qr-grid" id="qr-grid"></div>
+
+<button class="print-btn" onclick="window.print()">🖨️ 인쇄하기</button>
+
+<script>
+// ═══════════════════════════════════════════
+//  index.html의 BOOTHS와 동일하게 맞춰주세요
+// ═══════════════════════════════════════════
+const BOOTHS = [
+  { id: "BOOTH-01", name: "수소란 무엇인가", icon: "💧" },
+  { id: "BOOTH-02", name: "수소 생산 과정",  icon: "⚙️" },
+  { id: "BOOTH-03", name: "수소 연료전지",   icon: "🔋" },
+  { id: "BOOTH-04", name: "수소 자동차",     icon: "🚗" },
+  { id: "BOOTH-05", name: "그린 수소",       icon: "🌱" },
+  { id: "BOOTH-06", name: "수소 안전 체험",  icon: "🛡️" },
+];
+
+const grid = document.getElementById("qr-grid");
+
+BOOTHS.forEach(booth => {
+  const qrData = JSON.stringify({ boothId: booth.id });
+
+  const card = document.createElement("div");
+  card.className = "qr-card";
+  card.innerHTML = `
+    <h3>${booth.icon} ${booth.name}</h3>
+    <div class="booth-id">${booth.id}</div>
+    <div class="qr-container" id="qr-${booth.id}"></div>
+    <div class="qr-data">QR 데이터: ${qrData}</div>
+  `;
+  grid.appendChild(card);
+
+  new QRCode(document.getElementById(`qr-${booth.id}`), {
+    text: qrData,
+    width: 180,
+    height: 180,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M,
+  });
+});
+</script>
+</body>
+</html>

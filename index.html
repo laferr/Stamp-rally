@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>전시 스탬프 랠리</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;600;800&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --text: #f0f0f0;
+    --text-dim: #888;
+    --accent: #00e5a0;
+    --accent-glow: rgba(0, 229, 160, 0.3);
+    --stamp-empty: #1a1a1a;
+    --stamp-collected: #00e5a0;
+    --danger: #ff4757;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,10,10,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .header-progress {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .header-progress span { color: var(--accent); font-weight: 700; }
+
+  /* ── Main Container ── */
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* ── Exhibition Info ── */
+  .exhibition-info {
+    text-align: center;
+    padding: 32px 0 24px;
+  }
+
+  .exhibition-info h1 {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--accent), #00b8d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .exhibition-info p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* ── Stamp Grid ── */
+  .stamp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 20px 0;
+  }
+
+  .stamp-card {
+    aspect-ratio: 1;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stamp-card.collected {
+    border-color: var(--accent);
+    background: linear-gradient(145deg, rgba(0,229,160,0.08), rgba(0,184,212,0.05));
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  .stamp-card.collected .stamp-icon {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .stamp-card.just-collected {
+    animation: stampPop 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes stampPop {
+    0% { transform: scale(0.8); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  .stamp-icon {
+    font-size: 32px;
+    transform: scale(0.6);
+    opacity: 0.2;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .stamp-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .stamp-card.collected .stamp-label { color: var(--accent); }
+
+  .stamp-number {
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    opacity: 0.4;
+  }
+
+  .stamp-check {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+
+  .stamp-card.collected .stamp-check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .stamp-check::after {
+    content: '✓';
+    font-size: 10px;
+    color: var(--bg);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .stamp-card.collected .stamp-check::after { opacity: 1; }
+
+  /* ── Scan Button ── */
+  .scan-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 16px;
+    margin: 24px 0;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 24px var(--accent-glow);
+  }
+
+  .scan-btn:active { transform: scale(0.97); }
+
+  .scan-btn svg { width: 22px; height: 22px; }
+
+  /* ── Scanner Modal ── */
+  .scanner-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0,0,0,0.95);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .scanner-overlay.active { display: flex; }
+
+  .scanner-wrapper {
+    width: min(85vw, 360px);
+    position: relative;
+  }
+
+  .scanner-title {
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  #qr-reader {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  #qr-reader video { border-radius: 16px; }
+
+  .scanner-close {
+    margin-top: 24px;
+    padding: 12px 32px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* ── Completion Banner ── */
+  .completion-banner {
+    display: none;
+    text-align: center;
+    padding: 32px 20px;
+    margin: 20px 0;
+    background: linear-gradient(145deg, rgba(0,229,160,0.12), rgba(0,184,212,0.08));
+    border: 2px solid var(--accent);
+    border-radius: 20px;
+    animation: bannerGlow 2s ease-in-out infinite alternate;
+  }
+
+  .completion-banner.show { display: block; }
+
+  @keyframes bannerGlow {
+    from { box-shadow: 0 0 20px var(--accent-glow); }
+    to { box-shadow: 0 0 40px var(--accent-glow); }
+  }
+
+  .completion-banner h2 {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: var(--accent);
+  }
+
+  .completion-banner p {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .completion-emoji {
+    font-size: 48px;
+    margin-bottom: 12px;
+    animation: bounce 1s ease-in-out infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    padding: 14px 24px;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2000;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Reset Button ── */
+  .reset-area {
+    text-align: center;
+    padding: 32px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+
+  .reset-btn {
+    padding: 8px 20px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .reset-btn:active { border-color: var(--danger); color: var(--danger); }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    padding: 16px;
+    font-size: 11px;
+    color: var(--text-dim);
+    opacity: 0.4;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-title">STAMP RALLY</div>
+  <div class="header-progress"><span id="collected-count">0</span> / <span id="total-count">0</span></div>
+</div>
+
+<!-- Main -->
+<div class="container">
+
+  <div class="exhibition-info">
+    <h1>수소 에너지 체험 전시</h1>
+    <p>각 체험 부스를 방문하고 QR 코드를 스캔하여<br>스탬프를 모아보세요!</p>
+  </div>
+
+  <!-- Stamp Grid -->
+  <div class="stamp-grid" id="stamp-grid"></div>
+
+  <!-- Scan Button -->
+  <button class="scan-btn" id="scan-btn" onclick="openScanner()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+      <path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/>
+      <rect x="7" y="7" width="10" height="10" rx="1"/>
+    </svg>
+    QR 스탬프 스캔
+  </button>
+
+  <!-- Completion Banner -->
+  <div class="completion-banner" id="completion-banner">
+    <div class="completion-emoji">🎉</div>
+    <h2>축하합니다!</h2>
+    <p>모든 스탬프를 수집했습니다.<br>안내 데스크에서 기념품을 수령하세요!</p>
+  </div>
+
+  <!-- Reset -->
+  <div class="reset-area">
+    <button class="reset-btn" onclick="resetStamps()">스탬프 초기화</button>
+  </div>
+
+  <div class="footer">Powered by Stamp Rally PWA</div>
+</div>
+
+<!-- Scanner Modal -->
+<div class="scanner-overlay" id="scanner-overlay">
+  <div class="scanner-wrapper">
+    <div class="scanner-title">📷 QR 코드를 스캔하세요</div>
+    <div id="qr-reader"></div>
+    <button class="scanner-close" onclick="closeScanner()">닫기</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  전시 부스 데이터 (여기만 수정하면 됩니다)
+// ═══════════════════════════════════════════
+const BOOTHS = [
+  { id: "BOOTH-01", name: "수소란 무엇인가", icon: "💧" },
+  { id: "BOOTH-02", name: "수소 생산 과정",  icon: "⚙️" },
+  { id: "BOOTH-03", name: "수소 연료전지",   icon: "🔋" },
+  { id: "BOOTH-04", name: "수소 자동차",     icon: "🚗" },
+  { id: "BOOTH-05", name: "그린 수소",       icon: "🌱" },
+  { id: "BOOTH-06", name: "수소 안전 체험",  icon: "🛡️" },
+];
+
+// ═══════════════════════════════════════════
+//  QR 코드 형식 (각 부스에 부착할 QR 내용)
+//  예: {"boothId":"BOOTH-01"}
+// ═══════════════════════════════════════════
+
+const STORAGE_KEY = "stamp_rally_data";
+let html5QrCode = null;
+
+// ── 데이터 관리 ──
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return { collected: {} };
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// ── UI 렌더링 ──
+function render() {
+  const data = loadData();
+  const grid = document.getElementById("stamp-grid");
+  const collectedCount = Object.keys(data.collected).length;
+
+  document.getElementById("collected-count").textContent = collectedCount;
+  document.getElementById("total-count").textContent = BOOTHS.length;
+
+  grid.innerHTML = BOOTHS.map((booth, i) => {
+    const isCollected = !!data.collected[booth.id];
+    return `
+      <div class="stamp-card ${isCollected ? 'collected' : ''}" data-id="${booth.id}">
+        <span class="stamp-number">${String(i+1).padStart(2,'0')}</span>
+        <span class="stamp-check"></span>
+        <span class="stamp-icon">${booth.icon}</span>
+        <span class="stamp-label">${booth.name}</span>
+      </div>
+    `;
+  }).join("");
+
+  // 완료 체크
+  const banner = document.getElementById("completion-banner");
+  if (collectedCount >= BOOTHS.length) {
+    banner.classList.add("show");
+  } else {
+    banner.classList.remove("show");
+  }
+}
+
+// ── 스탬프 수집 ──
+function collectStamp(boothId) {
+  const booth = BOOTHS.find(b => b.id === boothId);
+  if (!booth) {
+    showToast("❌ 유효하지 않은 QR 코드입니다");
+    return false;
+  }
+
+  const data = loadData();
+  if (data.collected[boothId]) {
+    showToast(`✅ "${booth.name}" 이미 수집 완료!`);
+    return false;
+  }
+
+  data.collected[boothId] = {
+    timestamp: new Date().toISOString(),
+    name: booth.name
+  };
+  saveData(data);
+
+  render();
+
+  // 팝 애니메이션
+  setTimeout(() => {
+    const card = document.querySelector(`.stamp-card[data-id="${boothId}"]`);
+    if (card) card.classList.add("just-collected");
+  }, 50);
+
+  const total = BOOTHS.length;
+  const count = Object.keys(data.collected).length;
+  if (count >= total) {
+    showToast("🎉 모든 스탬프 수집 완료!");
+  } else {
+    showToast(`✨ "${booth.name}" 스탬프 획득! (${count}/${total})`);
+  }
+  return true;
+}
+
+// ── QR 스캐너 ──
+function openScanner() {
+  const overlay = document.getElementById("scanner-overlay");
+  overlay.classList.add("active");
+
+  html5QrCode = new Html5Qrcode("qr-reader");
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    onScanSuccess,
+    () => {}
+  ).catch(err => {
+    showToast("❌ 카메라 접근 실패");
+    closeScanner();
+  });
+}
+
+function closeScanner() {
+  const overlay = document.getElementById("scanner-overlay");
+  overlay.classList.remove("active");
+
+  if (html5QrCode) {
+    html5QrCode.stop().catch(() => {});
+    html5QrCode.clear();
+    html5QrCode = null;
+  }
+}
+
+function onScanSuccess(decodedText) {
+  // QR 데이터 파싱
+  let boothId = null;
+
+  try {
+    // JSON 형태: {"boothId":"BOOTH-01"}
+    const parsed = JSON.parse(decodedText);
+    boothId = parsed.boothId || parsed.booth_id || parsed.id;
+  } catch(e) {
+    // 텍스트 형태: "BOOTH-01"
+    if (decodedText.startsWith("BOOTH-")) {
+      boothId = decodedText.trim();
+    }
+  }
+
+  if (boothId) {
+    // 진동 피드백
+    if (navigator.vibrate) navigator.vibrate(100);
+    collectStamp(boothId);
+    closeScanner();
+  } else {
+    showToast("❌ 유효하지 않은 QR 코드입니다");
+  }
+}
+
+// ── 토스트 ──
+function showToast(msg) {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2500);
+}
+
+// ── 초기화 ──
+function resetStamps() {
+  if (confirm("모든 스탬프를 초기화하시겠습니까?")) {
+    localStorage.removeItem(STORAGE_KEY);
+    render();
+    showToast("🔄 스탬프가 초기화되었습니다");
+  }
+}
+
+// ── 초기 렌더링 ──
+render();
+</script>
+
+</body>
+</html>
